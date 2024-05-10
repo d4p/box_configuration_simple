@@ -7,8 +7,174 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
   </head>
   <body>
-    <h1>Hello, world!</h1>
-    <img src="http://127.0.0.1:5000/image.png?image_size=2223&box_dimension_X=153&box_dimension_Y=101&box_dimension_Z=150&wall_thickness=4&bottom_thickness=3&round_radius=30&hole_diameter=20&hole_Z=80&color=bb" alt="container preview"/>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script>
+const preview_generator = {
+  host: "127.0.0.1:5000",
+  imageSize: "2223",
+  dimensionX: "100",
+  dimensionY: "100",
+  dimensionZ: "100", 
+  wall_thickness: "3",
+  bottom_thickness: "3",
+  round_radius: "30", 
+  hole_diameter: "0",
+  hole_Z: "80",
+  color: "bw",
+  imageToUpdateId: "preview",
+
+  toURLImage: function (){
+    let returnString = "http://" + this.host;
+    returnString += "/image.png?"
+    returnString += this.parametersToURL();    
+    return returnString;
+  },
+  toURLSTL: function (){
+    let returnString = "http://" + this.host;
+    returnString += "/box.stl?";
+    returnString += this.parametersToURL();
+    return returnString;
+  },
+
+  parametersToURL: function (){
+    let returnString = "image_size=";
+    returnString += this.imageSize + "&"
+    returnString += "box_dimension_X=" + this.dimensionX + "&"
+    returnString += "box_dimension_Y=" + this.dimensionY + "&"
+    returnString += "box_dimension_Z=" + this.dimensionZ + "&"
+    returnString += "wall_thickness=" + this.wall_thickness + "&"
+    returnString += "bottom_thickness=" + this.bottom_thickness + "&" 
+    returnString += "round_radius=" + this.round_radius + "&" 
+    returnString += "hole_diameter=" + this.hole_diameter + "&" 
+    returnString += "hole_Z=" + this.hole_Z + "&"
+    returnString += "color=" + this.color
+    return  returnString;
+  },
+
+  updateDimensionXLabel: function(value){
+    const widthLabel = document.getElementById("label_box_dimension_X_value");
+    widthLabel.textContent = value + " mm";
+  },
+  updateDimensionYLabel: function(value){
+    const widthLabel = document.getElementById("label_box_dimension_Y_value");
+    widthLabel.textContent = value + " mm";
+  },
+  updateDimensionZLabel: function(value){
+    const widthLabel = document.getElementById("label_box_dimension_Z_value");
+    widthLabel.textContent = value + " mm";
+  },
+
+  updateDimensionX: function(value){
+    this.dimensionX = value;
+    this.updateDimensionXLabel(value);
+  },
+  updateDimensionY: function(value){
+    this.dimensionY = value;
+    this.updateDimensionYLabel(value);    
+  },
+  updateDimensionZ: function(value){
+    this.dimensionZ = value;
+    this.updateDimensionZLabel(value);
+  },
+  updateWallThickness: function(value){
+    this.wall_thickness = value;
+  },
+  updateBottomThickness: function(value){
+    this.bottom_thickness = value;
+  },
+  updateRoundRadius: function(value){
+    this.round_radius = value;
+  },
+  updateHoleDiameter: function(value){
+    this.hole_diameter = value;
+  },
+  updateHoleZ: function(value){
+    this.hole_Z = value;
+  },
+  updateColor: function(value){
+    this.color = value;
+  },
+  updateImageSize: function(value){
+    this.imageSize = value;
+  },
+
+//replace the image with new one
+  updateImage: function(){
+    imageToUpdate = document.getElementById(this.imageToUpdateId);
+    imageToUpdate.src = this.toURLImage();
+  },
+  downloadSTL: function(){
+    const link = document.createElement('a');
+    link.href = this.toURLSTL();
+    link.click();
+  },
+  downloadImage: function(){
+    const link = document.createElement('a');
+    link.href = this.toURLImage();
+    link.click();
+  }
+
+}
+       
+    </script>    
+    <h1>Hello, world!</h1>
+    <div>
+        <img src="http://127.0.0.1:5000/image.png?image_size=2223&box_dimension_X=150&box_dimension_Y=100&box_dimension_Z=150&wall_thickness=4&bottom_thickness=3&round_radius=30&hole_diameter=20&hole_Z=80&color=bw" style="width:500px;height:500px" id="preview" />
+    </div>
+    <div>
+        <label name="label_box_dimension_X_tile" for="range_box_dimension_X">Width</label>
+        <input name="range_box_dimension_X" id="range_box_dimension_X" type="range" value="100" step="5" min="50" max="280" oninput="preview_generator.updateDimensionX(this.value)" onchange="preview_generator.updateImage()"/> 
+        <label name="label_box_dimension_X_value" id="label_box_dimension_X_value">100 mm</label>
+    </div>
+    <div>
+        <label name="label_box_dimension_Y_tile" for="range_box_dimension_Y">Length</label>
+        <input name="range_box_dimension_Y" id="range_box_dimension_Y" type="range" value="100" step="5" min="50" max="280" oninput="preview_generator.updateDimensionY(this.value)" onchange="preview_generator.updateImage()"/> 
+        <label name="label_box_dimension_Y_value" id="label_box_dimension_Y_value">100 mm</label>
+    </div>
+    <div>
+        <label name="label_box_dimension_Z_tile" for="range_box_dimension_Z">Height</label>
+        <input name="range_box_dimension_Z" id="range_box_dimension_Z"type="range" value="100" step="5" min="50" max="280" oninput="preview_generator.updateDimensionZ(this.value)" onchange="preview_generator.updateImage()"/> 
+        <label name="label_box_dimension_Z_value" id="label_box_dimension_Z_value">100 mm</label>
+    </div>
+    <div>
+      <label for="wall_thickness">Wall thickness:</label>
+      <input type="number" id="wall_thickness" value="3" oninput="preview_generator.updateWallThickness(this.value)" oninput="preview_generator.updateWallThickness(this.value)" onchange="preview_generator.updateImage()">
+    </div>
+    <div>
+      <label for="bottom_thickness">Bottom thickness:</label>
+      <input type="number" id="bottom_thickness" value="3" oninput="preview_generator.updateBottomThickness(this.value)" onchange="preview_generator.updateImage()" >
+    </div>  
+    <div>
+      <label for="round_radius">Round radius:</label>
+      <input type="number" id="round_radius" value="30" oninput="preview_generator.updateRoundRadius(this.value)" onchange="preview_generator.updateImage()">
+    </div>
+    <div>
+      <label for="hole_diameter">Hole diameter:</label>
+      <input type="number" id="hole_diameter" value="0" oninput="preview_generator.updateHoleDiameter(this.value)" onchange="preview_generator.updateImage()">
+    </div>  
+    <div>
+      <label for="hole_Z">Hole Z:</label>
+      <input type="number" id="hole_Z" value="80" oninput="preview_generator.updateHoleZ(this.value)"  onchange="preview_generator.updateImage()">
+    </div>
+    <div>
+      <label for="color">Color:</label>
+      <input type="text" id="color" value="bw" oninput="preview_generator.updateColor(this.value)" onchange="preview_generator.updateImage()">
+    </div>
+    <div>
+      <label for="image_size">Image size:</label>
+      <input type="number" id="image_size" value="2223" oninput="preview_generator.updateImageSize(this.value)" onchange="preview_generator.updateImage()">
+    </div>
+    <div>
+      <button onclick="preview_generator.downloadSTL()">Download STL</button>
+    </div>
+    <div>
+      <button onclick="preview_generator.downloadImage()">Download Image</button>
+    </div>
+
+   
   </body>
+</html>
+  
+
+</body>
 </html>
