@@ -9,34 +9,394 @@
   <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
     <script>
-const preview_generator = {
-  host: "127.0.0.1:5000",
-  imageSize: "2223",
-  dimensionX: "100",
-  dimensionY: "100",
-  dimensionZ: "100", 
-  wall_thickness: "3",
-  bottom_thickness: "3",
-  round_radius: "30", 
-  hole_diameter: "0",
-  hole_Z: "80",
-  color: "bw",
-  imageToUpdateId: "preview",
 
-  toURLImage: function (){
+//TODO:
+//- add parameter validation - need to be consistent with backend limitations
+// - add auto pricing verification mechanism
+// - add shopify integration
+// - add slant 3d integration
+// - add "przegrodki"
+// - add other container types
+// - make beutifull
+
+
+class BoxCreator{  
+  static Icount = 0;
+
+  constructor(div_id,gui_type){
+  this.host = "127.0.0.1:5000";
+  this.div_id = div_id;
+  this.gui_type = gui_type;
+  this.imageToUpdateId = this.getHid("preview");
+
+  this.imageSize = "1200";
+  this.dimensionX = "100";
+  this.dimensionY = "100";  
+  this.dimensionZ = "100";
+  this.wall_thickness = "3";
+  this.bottom_thickness = "3";
+  this.round_radius = "30";
+  this.hole_diameter = "20";
+  this.hole_Z = "80";
+  this.color = "bw";
+
+  this.HhomeDiv = document.getElementById(this.div_id);
+
+  this.HaddImagePreview(this.imageSize/2);
+  this.HaddSizeSelectors();
+  this.HaddRoundRadius();
+  this.HaddColorSelector();
+  this.HaddWallThickness();
+  this.HaddbottomThickness();
+  this.HaddHoleSelector();
+  this.HaddImageSize();
+  this.HaddDebugButtons();
+
+  BoxCreator.Icount++;
+  }
+
+  HaddDebugButtons(){
+    this.HdebugButtonDiv = document.createElement("div");
+    this.HdebugButtonDiv.setAttribute("id", this.getHid("debug_buttons_div"));
+
+    this.HimageButton = document.createElement("button");
+    this.HimageButton.setAttribute("id", this.getHid("image_button"));
+    this.HimageButton.textContent = "Get image";
+    this.HimageButton.addEventListener("click", () => {this.downloadImage()});
+
+    this.HstlButton = document.createElement("button");
+    this.HstlButton.setAttribute("id", this.getHid("stl_button"));
+    this.HstlButton.textContent = "Get STL";
+    this.HstlButton.addEventListener("click", () => {this.downloadSTL()});
+
+    this.HdebugButtonDiv.appendChild(this.HimageButton);
+    this.HdebugButtonDiv.appendChild(this.HstlButton);
+    
+    if (this.gui_type == "debug"){
+      this.HhomeDiv.appendChild(this.HdebugButtonDiv);
+    }
+
+  }
+
+  HaddImageSize(){
+    this.HimageSizeDiv = document.createElement("div");
+    this.HimageSizeDiv.setAttribute("id", this.getHid("image_size_div"));
+
+    this.HimageSizeLabel = document.createElement("label");
+    this.HimageSizeLabel.setAttribute("for", this.getHid("image_size")); // Link to input ID
+    this.HimageSizeLabel.textContent = "Image size: ";
+
+    // Create the input element
+    this.HimageSizeInput = document.createElement("input");
+    this.HimageSizeInput.setAttribute("type", "number");
+    this.HimageSizeInput.setAttribute("id", this.getHid("image_size"));
+    this.HimageSizeInput.setAttribute("value", this.imageSize); // Initial value
+    this.HimageSizeInput.setAttribute("min", "500");
+    this.HimageSizeInput.setAttribute("max", "4096");
+    this.HimageSizeInput.addEventListener("input", () => {this.updateImageSize()});
+    this.HimageSizeInput.addEventListener("change", () => this.updateImage());    
+
+    this.HimageSizeDiv.appendChild(this.HimageSizeLabel);
+    this.HimageSizeDiv.appendChild(this.HimageSizeInput);
+    
+    if (this.gui_type == "debug"){
+      this.HhomeDiv.appendChild(this.HimageSizeDiv);
+    }
+  }
+
+  HaddColorSelector(){
+    // Create the container element (div)
+    this.HcolorSelectorDiv = document.createElement("div");
+
+    // Create the first label element (empty)
+    this.HcolorSelectorLabel = document.createElement("label");
+    this.HcolorSelectorLabel.textContent = "Color:";
+    this.HcolorSelectorLabel.setAttribute("id", this.getHid("color_label"));
+    this.HcolorSelectorLabel.setAttribute("for", this.getHid("color_bw"));
+
+
+    // Create the first radio button element
+    this.HcolorSelectorRadioButtonBlack = document.createElement("input");
+    this.HcolorSelectorRadioButtonBlack.setAttribute("type", "radio");
+    this.HcolorSelectorRadioButtonBlack.setAttribute("id", this.getHid("color_bb"));
+    this.HcolorSelectorRadioButtonBlack.setAttribute("name", this.getHid("color"));
+    this.HcolorSelectorRadioButtonBlack.setAttribute("value", "bb");
+    this.HcolorSelectorRadioButtonBlack.addEventListener("change", () => {this.updateColor(); this.updateImage()});
+    this.HcolorSelectorRadioButtonBlack.setAttribute("checked", true);
+    
+
+    // Create the second label element (for black radio button)
+    this.HcolorSelectorLabelBlack= document.createElement("label");
+    this.HcolorSelectorLabelBlack.setAttribute("for", this.getHid("color_bb"));
+    this.HcolorSelectorLabelBlack.textContent = "Black";
+
+    // Create the second radio button element
+    this.HcolorSelectorRadioButtonWhite = document.createElement("input");
+    this.HcolorSelectorRadioButtonWhite.setAttribute("type", "radio");
+    this.HcolorSelectorRadioButtonWhite.setAttribute("id", this.getHid("color_bw"));
+    this.HcolorSelectorRadioButtonWhite.setAttribute("name", this.getHid("color"));
+    this.HcolorSelectorRadioButtonWhite.setAttribute("value", "bw");
+    this.HcolorSelectorRadioButtonWhite.setAttribute("checked", true); // Set this one as checked
+    this.HcolorSelectorRadioButtonWhite.addEventListener("change", () => {this.updateColor(); this.updateImage()});
+    
+
+    // Create the third label element (for white radio button)
+    this.HcolorSelectorLabelWhite = document.createElement("label");
+    this.HcolorSelectorLabelWhite.setAttribute("for", this.getHid("color_bw"));
+    this.HcolorSelectorLabelWhite.textContent = "White";
+
+    // Append the elements to the container (order matters!)
+    this.HcolorSelectorDiv.appendChild(this.HcolorSelectorLabel);
+    this.HcolorSelectorDiv.appendChild(this.HcolorSelectorRadioButtonBlack);
+    this.HcolorSelectorDiv.appendChild(this.HcolorSelectorLabelBlack);
+    this.HcolorSelectorDiv.appendChild(this.HcolorSelectorRadioButtonWhite);
+    this.HcolorSelectorDiv.appendChild(this.HcolorSelectorLabelWhite);
+
+    // Append the container to the home div
+    this.HhomeDiv.appendChild(this.HcolorSelectorDiv);
+  }
+
+  HaddRoundRadius(){
+    this.HroundRadiusLabel = document.createElement("label");
+    this.HroundRadiusLabel.setAttribute("id", this.getHid("round_radius_label"));
+    this.HroundRadiusLabel.setAttribute("for", this.getHid("round_radius"));
+    this.HroundRadiusLabel.textContent = "Corner radius (1 for square)[mm]:";
+    
+    this.HroundRadiusInput = document.createElement("input");
+    this.HroundRadiusInput.setAttribute("id", this.getHid("round_radius"));
+    this.HroundRadiusInput.setAttribute("type", "number");
+    this.HroundRadiusInput.setAttribute("value", this.round_radius);
+    this.HroundRadiusInput.setAttribute("min", "1");
+    this.HroundRadiusInput.setAttribute("max", "60");
+    this.HroundRadiusInput.addEventListener("input", () => this.updateRoundRadius());
+    this.HroundRadiusInput.addEventListener("change", () => this.updateImage());
+    
+    this.HhomeDiv.appendChild(this.HroundRadiusLabel);    
+    this.HhomeDiv.appendChild(this.HroundRadiusInput);
+    
+  }
+
+  HaddHoleSelector(){
+    this.HholeSelectorDiv = document.createElement("div");
+    this.HholeSelectorDiv.setAttribute("id", this.getHid("hole_selector"));
+
+    this.HholeSelectorLabel = document.createElement("label");
+    this.HholeSelectorLabel.setAttribute("id", this.getHid("hole_diameter_label"));
+    this.HholeSelectorLabel.setAttribute("for", this.getHid("hole_diameter"));
+    this.HholeSelectorLabel.textContent = "Hole diameter [mm]:";
+
+    this.HholeDiameterInput = document.createElement("input");
+    this.HholeDiameterInput.setAttribute("id", this.getHid("hole_diameter"));
+    this.HholeDiameterInput.setAttribute("type", "number");
+    this.HholeDiameterInput.setAttribute("value", this.hole_diameter);
+    this.HholeDiameterInput.setAttribute("min", "10");
+    this.HholeDiameterInput.setAttribute("max", "40");
+    this.HholeDiameterInput.addEventListener("input", () => this.updateHoleDiameter());
+    this.HholeDiameterInput.addEventListener("change", () => this.updateImage());
+
+    this.HholeZLabel = document.createElement("label");
+    this.HholeZLabel.setAttribute("id", this.getHid("hole_z_label"));
+    this.HholeZLabel.setAttribute("for", this.getHid("hole_z"));
+    this.HholeZLabel.textContent = "Hole center height [mm]:";
+
+    this.HholeZInput = document.createElement("input");
+    this.HholeZInput.setAttribute("id", this.getHid("hole_z"));
+    this.HholeZInput.setAttribute("type", "number");
+    this.HholeZInput.setAttribute("value", this.hole_Z);
+//    this.HholeZInput.setAttribute("min", "50");
+//    this.HholeZInput.setAttribute("max", "100");
+    this.HholeZInput.addEventListener("input", () => this.updateHoleZ());
+    this.HholeZInput.addEventListener("change", () => this.updateImage());
+
+    this.HholeSelectorDiv.appendChild(this.HholeSelectorLabel);
+    this.HholeSelectorDiv.appendChild(this.HholeDiameterInput);
+
+    this.HholeSelectorDiv.appendChild(this.HholeZLabel);
+    this.HholeSelectorDiv.appendChild(this.HholeZInput);
+   
+    if(this.gui_type == "advanced" || this.gui_type == "debug")
+      this.HhomeDiv.appendChild(this.HholeSelectorDiv);
+  }
+
+  HaddbottomThickness(){
+    // Create the label element
+    this.HbottomThicknessLabel = document.createElement("label");
+    this.HbottomThicknessLabel.setAttribute("for", this.getHid("bottom_thickness")); // Link to input ID
+    this.HbottomThicknessLabel.textContent = "Bottom thickness [mm]:";
+
+    // Create the input element
+    this.HbottomThicknessInput = document.createElement("input");
+    this.HbottomThicknessInput.setAttribute("type", "number");
+    this.HbottomThicknessInput.setAttribute("id", this.getHid("bottom_thickness"));
+    this.HbottomThicknessInput.setAttribute("value", "3"); // Initial value
+    this.HbottomThicknessInput.setAttribute("min", "2");
+    this.HbottomThicknessInput.setAttribute("max", "6");
+    this.HbottomThicknessInput.addEventListener("input", () => this.updateBottomThickness());
+    this.HbottomThicknessInput.addEventListener("change", () => this.updateImage());
+
+    if (this.gui_type == "advanced" || this.gui_type == "debug"){
+      this.HhomeDiv.appendChild(this.HbottomThicknessLabel);
+      this.HhomeDiv.appendChild(this.HbottomThicknessInput);
+    }
+
+  }
+
+  HaddWallThickness(){
+    // Create the label element
+    this.HwallThicknessLabel = document.createElement("label");
+    this.HwallThicknessLabel.setAttribute("for", this.getHid("wall_thickness")); // Link to input ID
+    this.HwallThicknessLabel.textContent = "Wall thickness [mm]:";
+
+    // Create the input element
+    this.HwallThicknessInput = document.createElement("input");
+    this.HwallThicknessInput.setAttribute("type", "number");
+    this.HwallThicknessInput.setAttribute("id", this.getHid("wall_thickness"));
+    this.HwallThicknessInput.setAttribute("value", "3"); // Initial value
+    this.HwallThicknessInput.setAttribute("min", "3");
+    this.HwallThicknessInput.setAttribute("max", "5");
+    this.HwallThicknessInput.addEventListener("input", () => this.updateWallThickness());
+    this.HwallThicknessInput.addEventListener("change", () => this.updateImage());
+
+    if (this.gui_type == "advanced" || this.gui_type == "debug"){
+      this.HhomeDiv.appendChild(this.HwallThicknessLabel);
+      this.HhomeDiv.appendChild(this.HwallThicknessInput);
+    }
+
+  }
+
+
+  HaddImagePreview(size){
+    this.HpreviewImage = document.createElement("img");
+    this.HpreviewImage.id = this.imageToUpdateId;
+    this.HpreviewImage.src = this.toURLImage();
+    this.HpreviewImage.style.width =  size + "px";
+    this.HpreviewImage.style.height = size + "px";
+
+    this.HhomeDiv.appendChild(this.HpreviewImage);
+  }
+
+  HaddSizeSelectors(){
+    let step = 5;
+    if (this.gui_type == "advanced" || this.gui_type == "debug"){
+      step = 1;
+    }
+    //ADD X
+    // Create the first label element
+    this.HdimensionXLabel = document.createElement("label");
+    this.HdimensionXLabel.setAttribute("name", "label_box_dimension_X_tile");
+    this.HdimensionXLabel.setAttribute("for", this.getHid("range_box_dimension_X"));
+    this.HdimensionXLabel.textContent = "Width";
+
+    // Create the range input element
+    this.HdimensionXRangeInput = document.createElement("input");
+    this.HdimensionXRangeInput.setAttribute("name", "range_box_dimension_X");
+    this.HdimensionXRangeInput.setAttribute("id", this.getHid("range_box_dimension_X"));
+    this.HdimensionXRangeInput.setAttribute("type", "range");
+    this.HdimensionXRangeInput.setAttribute("value", this.dimensionX);
+    this.HdimensionXRangeInput.setAttribute("step", step);
+    this.HdimensionXRangeInput.setAttribute("min", "50");
+    this.HdimensionXRangeInput.setAttribute("max", "280");
+    this.HdimensionXRangeInput.addEventListener("input", () => this.updateDimensionX());
+    this.HdimensionXRangeInput.addEventListener("change", () => this.updateImage());
+   
+
+    // Create the second label element with value display
+    this.HdimensionXLabelValue = document.createElement("label");
+    this.HdimensionXLabelValue.setAttribute("name", "label_box_dimension_X_value");
+    this.HdimensionXLabelValue.setAttribute("id", this.getHid("label_box_dimension_X_value"));
+    this.HdimensionXLabelValue.setAttribute("for", this.getHid("range_box_dimension_X"));
+    this.HdimensionXLabelValue.textContent = "100 mm";
+
+    // Append the elements to the container (order matters!)
+    this.HhomeDiv.appendChild(this.HdimensionXLabel);
+    this.HhomeDiv.appendChild(this.HdimensionXRangeInput);
+    this.HhomeDiv.appendChild(this.HdimensionXLabelValue);
+
+    //ADD Y
+    // Create the first label element
+    this.HdimensionYLabel = document.createElement("label");
+    this.HdimensionYLabel.setAttribute("name", "label_boY_dimension_Y_tile");
+    this.HdimensionYLabel.setAttribute("for", this.getHid("range_box_dimension_Y"));
+    this.HdimensionYLabel.textContent = "Length";
+
+    // Create the range input element
+    this.HdimensionYRangeInput = document.createElement("input");
+    this.HdimensionYRangeInput.setAttribute("name", "range_boY_dimension_Y");
+    this.HdimensionYRangeInput.setAttribute("id", this.getHid("range_box_dimension_Y"));
+    this.HdimensionYRangeInput.setAttribute("type", "range");
+    this.HdimensionYRangeInput.setAttribute("value", this.dimensionY);
+    this.HdimensionYRangeInput.setAttribute("step", step);
+    this.HdimensionYRangeInput.setAttribute("min", "50");
+    this.HdimensionYRangeInput.setAttribute("max", "280");
+    this.HdimensionYRangeInput.addEventListener("input", () => this.updateDimensionY());
+    this.HdimensionYRangeInput.addEventListener("change", () => this.updateImage());
+   
+
+    // Create the second label element with value display
+    this.HdimensionYLabelValue = document.createElement("label");
+    this.HdimensionYLabelValue.setAttribute("name", "label_box_dimension_Y_value");
+    this.HdimensionYLabelValue.setAttribute("id", this.getHid("label_boY_dimension_Y_value"));
+    this.HdimensionYLabelValue.setAttribute("for", this.getHid("range_box_dimension_Y"));
+    this.HdimensionYLabelValue.textContent = "100 mm";
+
+    // Append the elements to the container (order matters!)
+    this.HhomeDiv.appendChild(this.HdimensionYLabel);
+    this.HhomeDiv.appendChild(this.HdimensionYRangeInput);
+    this.HhomeDiv.appendChild(this.HdimensionYLabelValue);
+
+    //ADD Z
+    // Create the first label element
+    this.HdimensionZLabel = document.createElement("label");
+    this.HdimensionZLabel.setAttribute("name", "label_box_dimension_Z_tile");
+    this.HdimensionZLabel.setAttribute("for", this.getHid("range_box_dimension_Z"));
+    this.HdimensionZLabel.textContent = "Height";
+
+    // Create the range input element
+    this.HdimensionZRangeInput = document.createElement("input");
+    this.HdimensionZRangeInput.setAttribute("name", "range_box_dimension_Z");
+    this.HdimensionZRangeInput.setAttribute("id", this.getHid("range_box_dimension_Z"));
+    this.HdimensionZRangeInput.setAttribute("type", "range");
+    this.HdimensionZRangeInput.setAttribute("value", this.dimensionZ);
+    this.HdimensionZRangeInput.setAttribute("step", step);
+    this.HdimensionZRangeInput.setAttribute("min", "50");
+    this.HdimensionZRangeInput.setAttribute("max", "280");
+    this.HdimensionZRangeInput.addEventListener("input", () => this.updateDimensionZ());
+    this.HdimensionZRangeInput.addEventListener("change", () => this.updateImage());
+   
+
+    // Create the second label element with value displaZ
+    this.HdimensionZLabelValue = document.createElement("label");
+    this.HdimensionZLabelValue.setAttribute("name", "label_box_dimension_Z_value");
+    this.HdimensionZLabelValue.setAttribute("id", this.getHid("label_box_dimension_Z_value"));
+    this.HdimensionZLabelValue.setAttribute("for", this.getHid("range_box_dimension_Z"));
+    this.HdimensionZLabelValue.textContent = "100 mm";
+
+    // Append the elements to the container (order matters!)
+    this.HhomeDiv.appendChild(this.HdimensionZLabel);
+    this.HhomeDiv.appendChild(this.HdimensionZRangeInput);
+    this.HhomeDiv.appendChild(this.HdimensionZLabelValue);
+
+  }
+
+  getHid(id){
+    return "BC" + BoxCreator.Icount + "_" + id;
+  }
+
+  toURLImage(){
     let returnString = "http://" + this.host;
     returnString += "/image.png?"
     returnString += this.parametersToURL();    
     return returnString;
-  },
-  toURLSTL: function (){
+  }
+  
+  toURLSTL(){
     let returnString = "http://" + this.host;
     returnString += "/box.stl?";
     returnString += this.parametersToURL();
     return returnString;
-  },
+  }
 
-  parametersToURL: function (){
+  parametersToURL(){
     let returnString = "image_size=";
     returnString += this.imageSize + "&"
     returnString += "box_dimension_X=" + this.dimensionX + "&"
@@ -49,132 +409,87 @@ const preview_generator = {
     returnString += "hole_Z=" + this.hole_Z + "&"
     returnString += "color=" + this.color
     return  returnString;
-  },
+  }
 
-  updateDimensionXLabel: function(value){
-    const widthLabel = document.getElementById("label_box_dimension_X_value");
-    widthLabel.textContent = value + " mm";
-  },
-  updateDimensionYLabel: function(value){
-    const widthLabel = document.getElementById("label_box_dimension_Y_value");
-    widthLabel.textContent = value + " mm";
-  },
-  updateDimensionZLabel: function(value){
-    const widthLabel = document.getElementById("label_box_dimension_Z_value");
-    widthLabel.textContent = value + " mm";
-  },
+  updateDimensionXLabel(value){
+    this.HdimensionXLabelValue.textContent = value + " mm";
+  }
 
-  updateDimensionX: function(value){
-    this.dimensionX = value;
-    this.updateDimensionXLabel(value);
-  },
-  updateDimensionY: function(value){
-    this.dimensionY = value;
-    this.updateDimensionYLabel(value);    
-  },
-  updateDimensionZ: function(value){
-    this.dimensionZ = value;
-    this.updateDimensionZLabel(value);
-  },
-  updateWallThickness: function(value){
-    this.wall_thickness = value;
-  },
-  updateBottomThickness: function(value){
-    this.bottom_thickness = value;
-  },
-  updateRoundRadius: function(value){
-    this.round_radius = value;
-  },
-  updateHoleDiameter: function(value){
-    this.hole_diameter = value;
-  },
-  updateHoleZ: function(value){
-    this.hole_Z = value;
-  },
-  updateColor: function(value){
-    this.color = value;
-  },
-  updateImageSize: function(value){
-    this.imageSize = value;
-  },
+  updateDimensionYLabel(value){
+    this.HdimensionYLabelValue.textContent = value + " mm";
+  }
+  updateDimensionZLabel(value){
+    this.HdimensionZLabelValue.textContent = value + " mm";
+  }
+
+  updateDimensionX(){
+    this.dimensionX = this.HdimensionXRangeInput.value;
+    this.updateDimensionXLabel(this.dimensionX);
+  }
+  updateDimensionY(){
+    this.dimensionY = this.HdimensionYRangeInput.value;
+    this.updateDimensionYLabel(this.dimensionY);
+  }
+  updateDimensionZ(){
+    this.dimensionZ = this.HdimensionZRangeInput.value;
+    this.updateDimensionZLabel(this.dimensionZ);
+  }
+  updateWallThickness(){
+    this.wall_thickness = this.HwallThicknessInput.value;
+  }
+  updateBottomThickness(){
+    this.bottom_thickness = this.HbottomThicknessInput.value;
+  }
+  updateRoundRadius(){
+    this.round_radius = this.HroundRadiusInput.value;
+  }
+  updateHoleDiameter(){
+    this.hole_diameter = this.HholeDiameterInput.value;
+  }
+  updateHoleZ(){
+    this.hole_Z = this.HholeZInput.value;
+  }
+  updateColor(){
+    if (this.HcolorSelectorRadioButtonBlack.checked)
+      this.color = "bb";
+    else if (this.HcolorSelectorRadioButtonWhite.checked)
+    this.color = "bw";
+  }
+  updateImageSize(){
+    this.imageSize = this.HimageSizeInput.value;
+  }
 
 //replace the image with new one
-  updateImage: function(){
-    imageToUpdate = document.getElementById(this.imageToUpdateId);
-    imageToUpdate.src = this.toURLImage();
-  },
-  downloadSTL: function(){
+  updateImage(){
+    this.HpreviewImage.src = this.toURLImage();
+  }
+  downloadSTL(){
     const link = document.createElement('a');
     link.href = this.toURLSTL();
     link.click();
-  },
-  downloadImage: function(){
+  }
+  downloadImage(){
     const link = document.createElement('a');
     link.href = this.toURLImage();
     link.click();
   }
-
+  
 }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      box_simple = new BoxCreator("application_holder_simple","simple");      
+      box_advanced = new BoxCreator("application_holder_advanced","advanced");      
+      box_debug = new BoxCreator("application_holder_debug","debug");
+    });
        
     </script>    
-    <h1>Hello, world!</h1>
-    <div>
-        <img src="http://127.0.0.1:5000/image.png?image_size=2223&box_dimension_X=150&box_dimension_Y=100&box_dimension_Z=150&wall_thickness=4&bottom_thickness=3&round_radius=30&hole_diameter=20&hole_Z=80&color=bw" style="width:500px;height:500px" id="preview" />
-    </div>
-    <div>
-        <label name="label_box_dimension_X_tile" for="range_box_dimension_X">Width</label>
-        <input name="range_box_dimension_X" id="range_box_dimension_X" type="range" value="100" step="5" min="50" max="280" oninput="preview_generator.updateDimensionX(this.value)" onchange="preview_generator.updateImage()"/> 
-        <label name="label_box_dimension_X_value" id="label_box_dimension_X_value">100 mm</label>
-    </div>
-    <div>
-        <label name="label_box_dimension_Y_tile" for="range_box_dimension_Y">Length</label>
-        <input name="range_box_dimension_Y" id="range_box_dimension_Y" type="range" value="100" step="5" min="50" max="280" oninput="preview_generator.updateDimensionY(this.value)" onchange="preview_generator.updateImage()"/> 
-        <label name="label_box_dimension_Y_value" id="label_box_dimension_Y_value">100 mm</label>
-    </div>
-    <div>
-        <label name="label_box_dimension_Z_tile" for="range_box_dimension_Z">Height</label>
-        <input name="range_box_dimension_Z" id="range_box_dimension_Z"type="range" value="100" step="5" min="50" max="280" oninput="preview_generator.updateDimensionZ(this.value)" onchange="preview_generator.updateImage()"/> 
-        <label name="label_box_dimension_Z_value" id="label_box_dimension_Z_value">100 mm</label>
-    </div>
-    <div>
-      <label for="wall_thickness">Wall thickness:</label>
-      <input type="number" id="wall_thickness" value="3" oninput="preview_generator.updateWallThickness(this.value)" oninput="preview_generator.updateWallThickness(this.value)" onchange="preview_generator.updateImage()">
-    </div>
-    <div>
-      <label for="bottom_thickness">Bottom thickness:</label>
-      <input type="number" id="bottom_thickness" value="3" oninput="preview_generator.updateBottomThickness(this.value)" onchange="preview_generator.updateImage()" >
-    </div>  
-    <div>
-      <label for="round_radius">Round radius:</label>
-      <input type="number" id="round_radius" value="30" oninput="preview_generator.updateRoundRadius(this.value)" onchange="preview_generator.updateImage()">
-    </div>
-    <div>
-      <label for="hole_diameter">Hole diameter:</label>
-      <input type="number" id="hole_diameter" value="0" oninput="preview_generator.updateHoleDiameter(this.value)" onchange="preview_generator.updateImage()">
-    </div>  
-    <div>
-      <label for="hole_Z">Hole Z:</label>
-      <input type="number" id="hole_Z" value="80" oninput="preview_generator.updateHoleZ(this.value)"  onchange="preview_generator.updateImage()">
-    </div>
-    <div>
-      <label for="color">Color:</label>
-      <input type="text" id="color" value="bw" oninput="preview_generator.updateColor(this.value)" onchange="preview_generator.updateImage()">
-    </div>
-    <div>
-      <label for="image_size">Image size:</label>
-      <input type="number" id="image_size" value="2223" oninput="preview_generator.updateImageSize(this.value)" onchange="preview_generator.updateImage()">
-    </div>
-    <div>
-      <button onclick="preview_generator.downloadSTL()">Download STL</button>
-    </div>
-    <div>
-      <button onclick="preview_generator.downloadImage()">Download Image</button>
-    </div>
+    <H1>Simple</H1>
+    <div id="application_holder_simple" style="display:flex;flex-direction:column;align-items:center"></div>
+    <H1>Advanced</H1>
+    <div id="application_holder_advanced" style="display:flex;flex-direction:column;align-items:center"></div>
+    <H1>Debug</H1>
+    <div id="application_holder_debug" style="display:flex;flex-direction:column;align-items:center"></div>
 
-   
   </body>
 </html>
-  
-
-</body>
-</html>
+ 
