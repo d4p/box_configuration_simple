@@ -8,6 +8,60 @@
   </head>
   <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <style>
+      .btn {
+        appearance: none;
+        background-color: #FAFBFC;
+        border: 1px solid rgba(27, 31, 35, 0.15);
+        border-radius: 6px;
+        box-shadow: rgba(27, 31, 35, 0.04) 0 1px 0, rgba(255, 255, 255, 0.25) 0 1px 0 inset;
+        box-sizing: border-box;
+        color: #24292E;
+        cursor: pointer;
+        display: inline-block;
+        font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 20px;
+        list-style: none;
+        padding: 6px 16px;
+        position: relative;
+        transition: background-color 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+        vertical-align: middle;
+        white-space: nowrap;
+        word-wrap: break-word;
+      }
+
+
+
+      .btn:disabled {
+        background-color: #FAFBFC;
+        border-color: rgba(27, 31, 35, 0.15);
+        color: #959DA5;
+        cursor: default;
+      }
+
+      .btn:active {
+        background-color: #EDEFF2;
+        box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
+        transition: none 0s;
+      }
+
+      .btn:focus {
+        outline: 1px transparent;
+      }
+
+      .btn:before {
+        display: none;
+      }
+
+      .btn:-webkit-details-marker {
+        display: none;
+      }
+    </style>
     <script>
 
 //TODO:
@@ -18,6 +72,7 @@
 // - add "przegrodki"
 // - add other container types
 // - make beutifull
+// - fix bug for round_radius=1 and wall_thickness = 5 -> wall thicknes is 1 despite setting
 
 
 class BoxCreator{  
@@ -63,11 +118,13 @@ class BoxCreator{
     this.HimageButton.setAttribute("id", this.getHid("image_button"));
     this.HimageButton.textContent = "Get image";
     this.HimageButton.addEventListener("click", () => {this.downloadImage()});
+    this.HimageButton.setAttribute("class", "btn btn-primary");
 
     this.HstlButton = document.createElement("button");
     this.HstlButton.setAttribute("id", this.getHid("stl_button"));
     this.HstlButton.textContent = "Get STL";
     this.HstlButton.addEventListener("click", () => {this.downloadSTL()});
+    this.HstlButton.setAttribute("class", "btn btn-primary");
 
     this.HdebugButtonDiv.appendChild(this.HimageButton);
     this.HdebugButtonDiv.appendChild(this.HstlButton);
@@ -93,8 +150,8 @@ class BoxCreator{
     this.HimageSizeInput.setAttribute("value", this.imageSize); // Initial value
     this.HimageSizeInput.setAttribute("min", "500");
     this.HimageSizeInput.setAttribute("max", "4096");
-    this.HimageSizeInput.addEventListener("input", () => {this.updateImageSize()});
-    this.HimageSizeInput.addEventListener("change", () => this.updateImage());    
+    this.HimageSizeInput.addEventListener("input", (e) => {this.updateImageSize(e.currentTarget.value)});
+    this.HimageSizeInput.addEventListener("change", () => this.updatePreview());    
 
     this.HimageSizeDiv.appendChild(this.HimageSizeLabel);
     this.HimageSizeDiv.appendChild(this.HimageSizeInput);
@@ -121,7 +178,7 @@ class BoxCreator{
     this.HcolorSelectorRadioButtonBlack.setAttribute("id", this.getHid("color_bb"));
     this.HcolorSelectorRadioButtonBlack.setAttribute("name", this.getHid("color"));
     this.HcolorSelectorRadioButtonBlack.setAttribute("value", "bb");
-    this.HcolorSelectorRadioButtonBlack.addEventListener("change", () => {this.updateColor(); this.updateImage()});
+    this.HcolorSelectorRadioButtonBlack.addEventListener("change", (e) => {this.updateColor(e.currentTarget.value); this.updatePreview()});
     this.HcolorSelectorRadioButtonBlack.setAttribute("checked", true);
     
 
@@ -137,7 +194,7 @@ class BoxCreator{
     this.HcolorSelectorRadioButtonWhite.setAttribute("name", this.getHid("color"));
     this.HcolorSelectorRadioButtonWhite.setAttribute("value", "bw");
     this.HcolorSelectorRadioButtonWhite.setAttribute("checked", true); // Set this one as checked
-    this.HcolorSelectorRadioButtonWhite.addEventListener("change", () => {this.updateColor(); this.updateImage()});
+    this.HcolorSelectorRadioButtonWhite.addEventListener("change", (e) => {this.updateColor(e.currentTarget.value); this.updatePreview()});
     
 
     // Create the third label element (for white radio button)
@@ -168,8 +225,8 @@ class BoxCreator{
     this.HroundRadiusInput.setAttribute("value", this.round_radius);
     this.HroundRadiusInput.setAttribute("min", "1");
     this.HroundRadiusInput.setAttribute("max", "60");
-    this.HroundRadiusInput.addEventListener("input", () => this.updateRoundRadius());
-    this.HroundRadiusInput.addEventListener("change", () => this.updateImage());
+    this.HroundRadiusInput.addEventListener("input", (e) => this.updateRoundRadius(e.currentTarget.value));
+    this.HroundRadiusInput.addEventListener("change", () => this.updatePreview());
     
     this.HhomeDiv.appendChild(this.HroundRadiusLabel);    
     this.HhomeDiv.appendChild(this.HroundRadiusInput);
@@ -191,8 +248,8 @@ class BoxCreator{
     this.HholeDiameterInput.setAttribute("value", this.hole_diameter);
     this.HholeDiameterInput.setAttribute("min", "10");
     this.HholeDiameterInput.setAttribute("max", "40");
-    this.HholeDiameterInput.addEventListener("input", () => this.updateHoleDiameter());
-    this.HholeDiameterInput.addEventListener("change", () => this.updateImage());
+    this.HholeDiameterInput.addEventListener("input", (e) => this.updateHoleDiameter(e.currentTarget.value));
+    this.HholeDiameterInput.addEventListener("change", () => this.updatePreview());
 
     this.HholeZLabel = document.createElement("label");
     this.HholeZLabel.setAttribute("id", this.getHid("hole_z_label"));
@@ -205,8 +262,8 @@ class BoxCreator{
     this.HholeZInput.setAttribute("value", this.hole_Z);
 //    this.HholeZInput.setAttribute("min", "50");
 //    this.HholeZInput.setAttribute("max", "100");
-    this.HholeZInput.addEventListener("input", () => this.updateHoleZ());
-    this.HholeZInput.addEventListener("change", () => this.updateImage());
+    this.HholeZInput.addEventListener("input", (e) => this.updateHoleZ(e.currentTarget.value));
+    this.HholeZInput.addEventListener("change", () => this.updatePreview());
 
     this.HholeSelectorDiv.appendChild(this.HholeSelectorLabel);
     this.HholeSelectorDiv.appendChild(this.HholeDiameterInput);
@@ -231,8 +288,8 @@ class BoxCreator{
     this.HbottomThicknessInput.setAttribute("value", "3"); // Initial value
     this.HbottomThicknessInput.setAttribute("min", "2");
     this.HbottomThicknessInput.setAttribute("max", "6");
-    this.HbottomThicknessInput.addEventListener("input", () => this.updateBottomThickness());
-    this.HbottomThicknessInput.addEventListener("change", () => this.updateImage());
+    this.HbottomThicknessInput.addEventListener("input", (e) => this.updateBottomThickness(e.currentTarget.value));
+    this.HbottomThicknessInput.addEventListener("change", () => this.updatePreview());
 
     if (this.gui_type == "advanced" || this.gui_type == "debug"){
       this.HhomeDiv.appendChild(this.HbottomThicknessLabel);
@@ -254,8 +311,8 @@ class BoxCreator{
     this.HwallThicknessInput.setAttribute("value", "3"); // Initial value
     this.HwallThicknessInput.setAttribute("min", "3");
     this.HwallThicknessInput.setAttribute("max", "5");
-    this.HwallThicknessInput.addEventListener("input", () => this.updateWallThickness());
-    this.HwallThicknessInput.addEventListener("change", () => this.updateImage());
+    this.HwallThicknessInput.addEventListener("input", (e) => this.updateWallThickness(e.currentTarget.value));
+    this.HwallThicknessInput.addEventListener("change", () => this.updatePreview());
 
     if (this.gui_type == "advanced" || this.gui_type == "debug"){
       this.HhomeDiv.appendChild(this.HwallThicknessLabel);
@@ -296,8 +353,8 @@ class BoxCreator{
     this.HdimensionXRangeInput.setAttribute("step", step);
     this.HdimensionXRangeInput.setAttribute("min", "50");
     this.HdimensionXRangeInput.setAttribute("max", "280");
-    this.HdimensionXRangeInput.addEventListener("input", () => this.updateDimensionX());
-    this.HdimensionXRangeInput.addEventListener("change", () => this.updateImage());
+    this.HdimensionXRangeInput.addEventListener("input", (e) => this.updateDimensionX(e.currentTarget.value));
+    this.HdimensionXRangeInput.addEventListener("change", () => this.updatePreview());
    
 
     // Create the second label element with value display
@@ -328,8 +385,8 @@ class BoxCreator{
     this.HdimensionYRangeInput.setAttribute("step", step);
     this.HdimensionYRangeInput.setAttribute("min", "50");
     this.HdimensionYRangeInput.setAttribute("max", "280");
-    this.HdimensionYRangeInput.addEventListener("input", () => this.updateDimensionY());
-    this.HdimensionYRangeInput.addEventListener("change", () => this.updateImage());
+    this.HdimensionYRangeInput.addEventListener("input", (e) => this.updateDimensionY(e.currentTarget.value));
+    this.HdimensionYRangeInput.addEventListener("change", () => this.updatePreview());
    
 
     // Create the second label element with value display
@@ -360,8 +417,8 @@ class BoxCreator{
     this.HdimensionZRangeInput.setAttribute("step", step);
     this.HdimensionZRangeInput.setAttribute("min", "50");
     this.HdimensionZRangeInput.setAttribute("max", "280");
-    this.HdimensionZRangeInput.addEventListener("input", () => this.updateDimensionZ());
-    this.HdimensionZRangeInput.addEventListener("change", () => this.updateImage());
+    this.HdimensionZRangeInput.addEventListener("input", (e) => this.updateDimensionZ(e.currentTarget.value));
+    this.HdimensionZRangeInput.addEventListener("change", () => this.updatePreview());
    
 
     // Create the second label element with value displaZ
@@ -422,45 +479,44 @@ class BoxCreator{
     this.HdimensionZLabelValue.textContent = value + " mm";
   }
 
-  updateDimensionX(){
-    this.dimensionX = this.HdimensionXRangeInput.value;
+  updateDimensionX(value){
+    this.dimensionX = value;
     this.updateDimensionXLabel(this.dimensionX);
   }
-  updateDimensionY(){
-    this.dimensionY = this.HdimensionYRangeInput.value;
+  updateDimensionY(value){
+    this.dimensionY = value;
     this.updateDimensionYLabel(this.dimensionY);
   }
-  updateDimensionZ(){
-    this.dimensionZ = this.HdimensionZRangeInput.value;
+  updateDimensionZ(value){
+    this.dimensionZ = value;
     this.updateDimensionZLabel(this.dimensionZ);
   }
-  updateWallThickness(){
-    this.wall_thickness = this.HwallThicknessInput.value;
+  updateWallThickness(value){
+    this.wall_thickness = value;
   }
-  updateBottomThickness(){
-    this.bottom_thickness = this.HbottomThicknessInput.value;
+  updateBottomThickness(value){
+    this.bottom_thickness = value;
   }
-  updateRoundRadius(){
-    this.round_radius = this.HroundRadiusInput.value;
+  updateRoundRadius(value){
+    //this.round_radius = this.HroundRadiusInput.value;
+    this.round_radius = value;
   }
-  updateHoleDiameter(){
-    this.hole_diameter = this.HholeDiameterInput.value;
+  updateHoleDiameter(value){
+    this.hole_diameter = value;
   }
-  updateHoleZ(){
-    this.hole_Z = this.HholeZInput.value;
+  updateHoleZ(value){
+    this.hole_Z = value;
   }
-  updateColor(){
-    if (this.HcolorSelectorRadioButtonBlack.checked)
-      this.color = "bb";
-    else if (this.HcolorSelectorRadioButtonWhite.checked)
-    this.color = "bw";
+  updateColor(value){
+    this.color = value;
+
   }
-  updateImageSize(){
-    this.imageSize = this.HimageSizeInput.value;
+  updateImageSize(value){
+    this.imageSize = value;
   }
 
 //replace the image with new one
-  updateImage(){
+  updatePreview(){
     this.HpreviewImage.src = this.toURLImage();
   }
   downloadSTL(){
